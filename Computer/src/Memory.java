@@ -1,39 +1,33 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
 
 public class Memory {
 
-	public short process[] = { 
-			0x0000, // start address
-			0x0010, // header memory size
-			0x0016, // code segment size
-			0x0004, // data segment size
-			// code segment
-			// setac 3
-			0x0803,
-			// sta A
-			0x0200,
-			// setac 4
-			0x0803,
-			// STA B
-			0x0202,
-
-			// B = A + B
-			// LDA A
-			0x0100,
-
-			// ADD B
-			0x0302,
-
-			// STA B
-			0x0202,
-
-			// halt
-			0x0000,
-
-			// data segment
-			0x0000, // A
-			0x0000 // B
-	};
-
+	short process[];
+	
+	public Memory() {
+		this.process = new short[512];
+	}
+	
+	public void loadProcess(String fileName) {
+		Scanner scanner = null;
+		try {
+			scanner = new Scanner(new File("exe/" + fileName));
+			short address = 0;
+			while (scanner.hasNext()) {
+				this.process[address] = scanner.nextShort(16);
+				address++;
+			}
+			scanner.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
 	public short load(short mar) {
 		short data = process[mar];
 		return data;

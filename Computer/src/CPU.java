@@ -215,6 +215,9 @@ public class CPU {
 		CPU cpu = new CPU();
 		Memory memory = new Memory();
 		cpu.associate(memory);
+		
+		memory.loadProcess("sum");
+		
 		cpu.setPowerOn();
 	}
 }
