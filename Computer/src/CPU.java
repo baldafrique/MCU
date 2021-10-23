@@ -1,23 +1,35 @@
 
 public class CPU {
-	
 	// declaration
 	private enum EOpcode {
 		eHalt,
 		eLDA,
+		eLDC,
 		eSTA,
-		eADD,
-		eAND,
+		eADDA,
+		eADDC,
+		eSUBA,
+		eSUBC,
+		eMULA,
+		eDIVA,
+		eANDA,
 		eJMP,
 		eJMPBZ,
-		eJMPEQ,
-		eSETAC,
-//		eSub,
-//		eGT,
-//		eEQ,
-//		eBGT, // Branch greater than
-//		eBEQ, // Branch equal
-//		eBranch,
+		eJMPEQ
+	}
+	
+	private class CU {
+		
+	}
+
+	private class ALU {
+		public void add(short value) {
+			
+		}
+		
+		public void store(short value) {
+			
+		}
 	}
 	
 	private enum ERegister {
@@ -28,31 +40,6 @@ public class CPU {
 		eMBR,
 		eMAR,
 		eStatus
-	}
-	
-	private class CU {
-		
-	}
-
-	private class ALU {
-		public void add(CPU.Register[] registers) {
-			registers[ERegister.eAC.ordinal()].setValue(
-					(short) (registers[ERegister.eAC.ordinal()].getValue() + registers[ERegister.eMBR.ordinal()].getValue())
-					);
-		}
-
-		public void subtract() {
-			
-		}
-
-		public void greaterThan() {
-			
-		}
-
-		public void equal() {
-			
-		}
-		
 	}
 	
 	private class Register {
@@ -71,11 +58,29 @@ public class CPU {
 		}
 	}
 	
+	private class SR extends Register {
+		// eq
+		public boolean checkEQ() {
+			if ((this.getValue() & 0x8000) == 0) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		
+		// bz
+		public boolean checkBZ() {
+			if ((this.getValue() & 0x0800) == 0) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+	}
+	
 	// components
-	private ALU alu;
 	private CU cu;
-	int PC;
-	int SP;
+	private ALU alu;
 	Register registers[];
 	
 	// association
@@ -83,12 +88,74 @@ public class CPU {
 	
 	// states
 	private boolean bPowerOn;
+	
 	private boolean isPowerOn() { return this.bPowerOn; }
+	
 	public void setPowerOn() { 
 		this.bPowerOn = true; 
 		this.run();
 	}
+	
 	public void shutDown() { this.bPowerOn = false; }
+	
+	// instructions
+	private void Halt() {}
+	
+	private void LDA() {
+		// IR.operand -> MAR
+		this.registers[ERegister.eMAR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+		// memory[MAR] -> MBR
+		this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load(this.registers[ERegister.eMAR.ordinal()].getValue()));
+		// MBR -> AC
+		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
+	}
+	
+	private void LDC() {
+		// IR.operand -> MBR
+		this.registers[ERegister.eMBR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+		// MBR -> AC
+		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
+	}
+	
+	private void STA() {
+		// AC -> MBR
+		this.registers[ERegister.eMBR.ordinal()].setValue(this.registers[ERegister.eAC.ordinal()].getValue());
+		// IR.operand -> MAR
+		this.registers[ERegister.eMAR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+		// MBR -> memory[MAR]
+		this.memory.store(this.registers[ERegister.eMAR.ordinal()].getValue(), this.registers[ERegister.eMBR.ordinal()].getValue());
+	}
+	
+	private void ADDA() {
+		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
+		this.LDA();
+		this.alu.add(this.registers[ERegister.eAC.ordinal()].getValue());
+	}
+	
+	private void ADDC() {
+		// AC -> ALU
+		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
+		this.LDC();
+		this.alu.add(this.registers[ERegister.eAC.ordinal()].getValue());
+	}
+	
+	private void SUBA() {}
+	
+	private void SUBC() {}
+	
+	private void MULA() {}
+	
+	private void DIVA() {}
+	
+	private void ANDA() {}
+	
+	private void JMP() {
+		
+	}
+	
+	private void JMPBZ() {}
+	
+	private void JMPEQ() {}
 	
 	// constructor
 	public CPU() {
@@ -102,112 +169,77 @@ public class CPU {
 	}
 	
 	// associate
-		public void associate(Memory memory) {
-			this.memory = memory;
-			this.registers[ERegister.ePC.ordinal()].setValue(this.memory.process[PC]); // Set PC
-			this.registers[ERegister.eSP.ordinal()].setValue(this.memory.process[SP]); // Set SP
-			String size;
-			size = Integer.toHexString((int)this.memory.process[1]);
-			this.PC = Integer.parseInt(size) / 2;
-			System.out.println("PC is set up");
-			size = Integer.toHexString((int)this.memory.process[2]);
-			this.SP = this.PC + Integer.parseInt(size) / 2;
-			System.out.println("SP is set up");
-		}
+	public void associate(Memory memory) { this.memory = memory; }
 	
 	// methods
 	private void fetch() {
 		// load next instruction from memory to IR
 		// PC -> MAR
 		this.registers[ERegister.eMAR.ordinal()].setValue(this.registers[ERegister.ePC.ordinal()].getValue());
-		System.out.println("MAR <- PC");
+		// memory[MAR] -> MBR
 		this.registers[ERegister.eMBR.ordinal()].setValue(this.registers[ERegister.eMAR.ordinal()].getValue());
-		System.out.println("MBR <- (MAR)");
+		// MBR -> IR
 		this.registers[ERegister.eIR.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-		System.out.println("IR <- MBR");
 	}
 	
-	private void load() {
-		// load data from memory
-		this.registers[ERegister.eMAR.ordinal()].setValue(
-				(short)
-				(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand()
-				+ this.registers[ERegister.eSP.ordinal()].getValue()));
-		this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load(this.registers[ERegister.eMAR.ordinal()].getValue()));
-		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-	}
-	
-	private void store() {
-		this.memory.store(this.registers[ERegister.eMAR.ordinal()].getValue(), this.registers[ERegister.eMBR.ordinal()].getValue());
+	private void decode() {
+		
 	}
 	
 	private void execute() {
 		System.out.println(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperator());
 		switch (EOpcode.values()[((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperator()]) {
 			case eHalt:
+				this.Halt();
 				break;
 			case eLDA:
-				this.load();
+				this.LDA();
+				break;
+			case eLDC:
+				this.LDC();
 				break;
 			case eSTA:
-				this.store();
-				System.out.println("STA");
+				this.STA();
 				break;
-			case eADD:
-				this.registers[ERegister.eMAR.ordinal()].setValue(
-						(short)
-						(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand()
-						+ this.registers[ERegister.eSP.ordinal()].getValue()));
-				this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load(this.registers[ERegister.eMAR.ordinal()].getValue()));
-//				this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-//				this.load();
-				this.alu.add(this.registers);
+			case eADDA:
+				this.ADDA();
 				break;
-			case eAND:
+			case eADDC:
+				this.ADDC();
+				break;
+			case eSUBA:
+				this.SUBA();
+				break;
+			case eSUBC:
+				this.SUBC();
+				break;
+			case eMULA:
+				this.MULA();
+				break;
+			case eDIVA:
+				this.DIVA();
+				break;
+			case eANDA:
+				this.ANDA();
 				break;
 			case eJMP:
+				this.JMP();
 				break;
 			case eJMPBZ:
+				this.JMPBZ();
 				break;
 			case eJMPEQ:
+				this.JMPEQ();
 				break;
-			case eSETAC:
-				this.registers[ERegister.eAC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
-				System.out.println("SETAC");
-				break;
-//			case eSub:
-//				this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-//				this.load();
-//				this.alu.subtract();
-//				break;
-//			case eGT:
-//				this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-//				this.load();
-//				this.alu.greaterThan();
-//				break;
-//			case eEQ:
-//				this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-//				this.load();
-//				this.alu.equal();
-//				break;
-//			case eBranch:
-//				break;
 			default:
 				break;
 		}
-		this.registers[ERegister.ePC.ordinal()].setValue(this.memory.process[++PC]);
 	}
-
 	
 	public void run() {
 		while(isPowerOn()) {
 			this.fetch();
 			this.execute();
-			
-			if (this.PC == this.SP) {
-				System.out.println(this.memory.process[13]);
-				break;
-			}
 		}
 	}
 	
@@ -215,9 +247,7 @@ public class CPU {
 		CPU cpu = new CPU();
 		Memory memory = new Memory();
 		cpu.associate(memory);
-		
 		memory.loadProcess("sum");
-		
 		cpu.setPowerOn();
 	}
 }
