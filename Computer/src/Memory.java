@@ -11,7 +11,7 @@ public class Memory {
 	short process[];
 	
 	public Memory() {
-		this.process = new short[512];
+		this.memory = new short[512];
 		this.currentAddress = 0;
 	}
 	
@@ -25,10 +25,6 @@ public class Memory {
 		public short getPC() { return this.PC; }
 		
 		public short getSP() { return this.SP; }
-		
-		public Process() {
-			
-		}
 		
 		private void loadHeader(Scanner scanner) {
 			this.sizeData = scanner.nextShort(16);
@@ -45,14 +41,15 @@ public class Memory {
 			// sp
 			
 			// code segment
-			PC = currentAddress;
+			PC = memory[indexPC];
+			currentAddress = 2;
 			for (short i=0; i<sizeCode/2; i++) {
 				memory[currentAddress] = scanner.nextShort(16);
 				currentAddress++;
 			}
 			
 			// data segment
-			SP = currentAddress;
+			SP = memory[indexSP];
 			currentAddress = (short) (currentAddress + this.sizeData/2);
 		}
 		public void loadProcess(String fileName) {
@@ -79,12 +76,12 @@ public class Memory {
 	public short getSP() { return this.currentProcess.getSP(); }
 	
 	public short load(short mar) {
-		short data = process[mar];
+		short data = memory[mar];
 		return data;
 	}
 
 	public void store(short mar, short mbr) {
-		process[mar] = mbr;
+		memory[mar] = mbr;
 	}
 
 }
