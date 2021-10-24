@@ -14,11 +14,45 @@ public class CPU {
 		eDIVA,
 		eANDA,
 		eJMP,
-		eJMPBZ,
-		eJMPEQ
+		eJMPBZ, // (A<B)
+		eJMPBZEQ, // (A<=B)
+		eJMPEQ // (A==B)
+	}
+	
+	private class Register {
+		protected short value;
+		public short getValue() { return this.value; }
+		public void setValue(short value) { this.value = value; }
 	}
 	
 	private class CU {
+
+		// EQ
+		public boolean isEQ(Register sr) {
+			if ((sr.getValue() & 0x8000) == 0) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		
+		// BZ
+		public boolean isBZ(Register sr) {
+			if ((sr.getValue() & 0x4000) == 0) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		
+		// BZEQ
+		public boolean isBZEQ(Register sr) {
+			if (this.isEQ(sr) || this.isBZ(sr)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
 		
 	}
 
@@ -42,12 +76,6 @@ public class CPU {
 		eStatus
 	}
 	
-	private class Register {
-		protected short value;
-		public short getValue() { return this.value; }
-		public void setValue(short value) { this.value = value; }
-	}
-	
 	private class IR extends Register {
 		public short getOperator() {
 			return (short) (this.value & 0);
@@ -55,26 +83,6 @@ public class CPU {
 		
 		public short getOperand() {
 			return (short)(this.value & 0x00ff);
-		}
-	}
-	
-	private class SR extends Register {
-		// eq
-		public boolean checkEQ() {
-			if ((this.getValue() & 0x8000) == 0) {
-				return false;
-			} else {
-				return true;
-			}
-		}
-		
-		// bz
-		public boolean checkBZ() {
-			if ((this.getValue() & 0x0800) == 0) {
-				return false;
-			} else {
-				return true;
-			}
 		}
 	}
 	
@@ -154,6 +162,13 @@ public class CPU {
 	}
 	
 	private void JMPBZ() {}
+
+	private void JMPBZEQ() {
+		if (this.cu.isBZ(this.registers[ERegister.eStatus.ordinal()])) {
+			// ir.operand -> PC
+			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+		}
+	}
 	
 	private void JMPEQ() {}
 	
@@ -228,6 +243,9 @@ public class CPU {
 			case eJMPBZ:
 				this.JMPBZ();
 				break;
+			case eJMPBZEQ:
+				this.JMPBZEQ();
+				break;
 			case eJMPEQ:
 				this.JMPEQ();
 				break;
@@ -235,7 +253,7 @@ public class CPU {
 				break;
 		}
 	}
-	
+
 	public void run() {
 		while(isPowerOn()) {
 			this.fetch();
