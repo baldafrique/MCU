@@ -5,9 +5,8 @@ import java.util.Scanner;
 public class Memory {
 
 	private short memory[];
-	short currentAddress;
 	private Process currentProcess;
-	
+	short currentAddress;
 	short process[];
 	
 	public Memory() {
@@ -36,10 +35,6 @@ public class Memory {
 		}
 		
 		private void loadBody(Scanner scanner) {
-			// system generated code
-			// pc
-			// sp
-			
 			// code segment
 			PC = memory[indexPC];
 			currentAddress = 2;

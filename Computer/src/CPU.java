@@ -14,9 +14,9 @@ public class CPU {
 		eDIVA,
 		eANDA,
 		eJMP,
-		eJMPBZ, // (A<B)
+		eJMPBZ,
 		eJMPBZEQ, // (A<=B)
-		eJMPEQ // (A==B)
+		eJMPEQ
 	}
 	
 	private class Register {
@@ -26,7 +26,6 @@ public class CPU {
 	}
 	
 	private class CU {
-		// EQ
 		public boolean isEQ(Register sr) {
 			if ((sr.getValue() & 0x8000) == 0) {
 				return false;
@@ -35,7 +34,6 @@ public class CPU {
 			}
 		}
 		
-		// BZ
 		public boolean isBZ(Register sr) {
 			if ((sr.getValue() & 0x4000) == 0) {
 				return false;
@@ -44,7 +42,6 @@ public class CPU {
 			}
 		}
 		
-		// BZEQ
 		public boolean isBZEQ(Register sr) {
 			if (this.isEQ(sr) || this.isBZ(sr)) {
 				return true;
@@ -130,27 +127,19 @@ public class CPU {
 	}
 	
 	private void LDA() {
-		// IR.operand -> MAR
 		this.registers[ERegister.eMAR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
-		// memory[MAR] -> MBR
 		this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load(this.registers[ERegister.eMAR.ordinal()].getValue()));
-		// MBR -> AC
 		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
 	}
 	
 	private void LDC() {
-		// IR.operand -> MBR
 		this.registers[ERegister.eMBR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
-		// MBR -> AC
 		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
 	}
 	
 	private void STA() {
-		// AC -> MBR
 		this.registers[ERegister.eMBR.ordinal()].setValue(this.registers[ERegister.eAC.ordinal()].getValue());
-		// IR.operand -> MAR
 		this.registers[ERegister.eMAR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
-		// MBR -> memory[MAR]
 		this.memory.store(this.registers[ERegister.eMAR.ordinal()].getValue(), this.registers[ERegister.eMBR.ordinal()].getValue());
 	}
 	
@@ -161,7 +150,6 @@ public class CPU {
 	}
 	
 	private void ADDC() {
-		// AC -> ALU
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDC();
 		this.alu.add(this.registers[ERegister.eAC.ordinal()].getValue());
@@ -203,21 +191,18 @@ public class CPU {
 	
 	private void JMPBZ() {
 		if (this.cu.isBZ(this.registers[ERegister.eStatus.ordinal()])) {
-			// ir.operand -> PC
 			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
 		}
 	}
 
 	private void JMPBZEQ() {
 		if (this.cu.isBZEQ(this.registers[ERegister.eStatus.ordinal()])) {
-			// ir.operand -> PC
 			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
 		}
 	}
 	
 	private void JMPEQ() {
 		if (this.cu.isEQ(this.registers[ERegister.eStatus.ordinal()])) {
-			// ir.operand -> PC
 			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
 		}
 	}
@@ -238,12 +223,8 @@ public class CPU {
 	
 	// methods
 	private void fetch() {
-		// load next instruction from memory to IR
-		// PC -> MAR
 		this.registers[ERegister.eMAR.ordinal()].setValue(this.registers[ERegister.ePC.ordinal()].getValue());
-		// memory[MAR] -> MBR
 		this.registers[ERegister.eMBR.ordinal()].setValue(this.registers[ERegister.eMAR.ordinal()].getValue());
-		// MBR -> IR
 		this.registers[ERegister.eIR.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
 	}
 	
