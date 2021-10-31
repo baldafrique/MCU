@@ -19,8 +19,9 @@ public class CPU {
 		eANDA,
 		eJMP,
 		eJMPBZ,
-		eJMPEQ,
-		eJMPBZEQ
+		eJMPBZEQ,
+		eJMPEQ
+		
 	}
 	
 	private class Register {
@@ -57,22 +58,29 @@ public class CPU {
 	}
 
 	private class ALU {
+		private Register[] registers;
+		private short value;
+		
+		public ALU(Register[] registers) {
+			this.registers = registers;
+		}
+		
 		public void store(short value) {
-			
+			this.value = value;
 		}
 		public void add(short value) {
-			
+			this.registers[ERegister.eAC.ordinal()].setValue((short) (this.value + value));
 		}
 		
 		public void substract(short value) {
-			
+			this.registers[ERegister.eAC.ordinal()].setValue((short) (this.value - value));
 		}
 		
 		public void multiply(short value) {
 			
 		}
 		public void divide(short value) {
-			
+			this.registers[ERegister.eAC.ordinal()].setValue((short) (this.value / value));
 		}
 		
 		public void and(short value) {
@@ -92,7 +100,7 @@ public class CPU {
 	
 	private class IR extends Register {
 		public short getOperator() {
-			return (short) (this.value & 0xff00);
+			return (short) (this.value >> 8);
 		}
 		
 		public short getOperand() {
@@ -130,55 +138,71 @@ public class CPU {
 	}
 	
 	// instructions
+	
 	private void Halt() {
-		
+		this.shutDown();
 	}
 	
 	private void LDA() {
 		this.registers[ERegister.eMAR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
-		this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load(this.registers[ERegister.eMAR.ordinal()].getValue()));
+		this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load((short) (this.registers[ERegister.eSP.ordinal()].getValue() + this.registers[ERegister.eMAR.ordinal()].getValue() / 2)));
 		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void LDC() {
 		this.registers[ERegister.eMBR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
 		this.registers[ERegister.eAC.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void STA() {
 		this.registers[ERegister.eMBR.ordinal()].setValue(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.registers[ERegister.eMAR.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
-		this.memory.store(this.registers[ERegister.eMAR.ordinal()].getValue(), this.registers[ERegister.eMBR.ordinal()].getValue());
+		this.memory.store((short) (this.registers[ERegister.eSP.ordinal()].getValue() + this.registers[ERegister.eMAR.ordinal()].getValue() / 2), this.registers[ERegister.eMBR.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void ADDA() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDA();
+		decreasePC();
 		this.alu.add(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void ADDC() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDC();
+		decreasePC();
 		this.alu.add(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void SUBA() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDA();
+		decreasePC();
 		this.alu.substract(this.registers[ERegister.eAC.ordinal()].getValue());
+		setStatus();
+		increasePC();
 	}
 	
 	private void SUBC() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDC();
-		this.alu.substract(this.registers[ERegister.eAC.ordinal()].getValue());	
+		decreasePC();
+		this.alu.substract(this.registers[ERegister.eAC.ordinal()].getValue());
+		setStatus();
+		increasePC();
 	}
 	
 	private void MULA() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDA();
+		decreasePC();
 		this.alu.multiply(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void MULC() {
@@ -188,46 +212,78 @@ public class CPU {
 	private void DIVA() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDA();
+		decreasePC();
 		this.alu.divide(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void DIVC() {
-		
+		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
+		this.LDC();
+		decreasePC();
+		this.alu.divide(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void ANDA() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDA();
+		decreasePC();
 		this.alu.and(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void JMP() {
-		this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+		this.registers[ERegister.ePC.ordinal()].setValue((short) (((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand() - 1));
 	}
 	
 	private void JMPBZ() {
 		if (this.cu.isBZ(this.registers[ERegister.eStatus.ordinal()])) {
-			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+			this.registers[ERegister.ePC.ordinal()].setValue((short) (((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand() - 1));
+		} else {
+			increasePC();
 		}
 	}
 
 	private void JMPBZEQ() {
 		if (this.cu.isBZEQ(this.registers[ERegister.eStatus.ordinal()])) {
-			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+			this.registers[ERegister.ePC.ordinal()].setValue((short) (((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand() - 1));
+		} else {
+			increasePC();
 		}
 	}
 	
 	private void JMPEQ() {
 		if (this.cu.isEQ(this.registers[ERegister.eStatus.ordinal()])) {
-			this.registers[ERegister.ePC.ordinal()].setValue(((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand());
+			this.registers[ERegister.ePC.ordinal()].setValue((short) (((CPU.IR) this.registers[ERegister.eIR.ordinal()]).getOperand() - 1));
+		} else {
+			increasePC();
+		}
+	}
+	
+	private void increasePC() {
+		this.registers[ERegister.ePC.ordinal()].setValue((short) (this.registers[ERegister.ePC.ordinal()].getValue() + 1));
+	}
+	
+	private void decreasePC() {
+		this.registers[ERegister.ePC.ordinal()].setValue((short) (this.registers[ERegister.ePC.ordinal()].getValue() - 1));
+	}
+	
+	private void setStatus() {
+		if (this.registers[ERegister.eAC.ordinal()].getValue() == 0) {
+			this.registers[ERegister.eStatus.ordinal()].setValue((short) 0x8000);
+		} else if (this.registers[ERegister.eAC.ordinal()].getValue() < 0) {
+			this.registers[ERegister.eStatus.ordinal()].setValue((short) 0x4000);
+		} else {
+			this.registers[ERegister.eStatus.ordinal()].setValue((short) 0x0000);
 		}
 	}
 	
 	// constructor
 	public CPU() {
-		this.alu = new ALU();
-		this.cu = new CU();
 		this.registers = new Register[ERegister.values().length];
+		this.alu = new ALU(this.registers);
+		this.cu = new CU();
 		for (ERegister eRegister: ERegister.values()) {
 			this.registers[eRegister.ordinal()] = new Register();
 		}

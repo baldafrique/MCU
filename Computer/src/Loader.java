@@ -37,8 +37,8 @@ public class Loader {
 		
 		this.memory.store(currentAddress++, sizeDataSegment);
 		this.memory.store(currentAddress++, sizeCodeSegment);
-		this.cpu.setPC((short) (startAddress + sizeHeader));
-		this.cpu.setSP((short) (startAddress + sizeHeader + sizeCodeSegment));
+		this.cpu.setPC((short) (startAddress + sizeHeader / 2));
+		this.cpu.setSP((short) (startAddress + sizeHeader/2 + sizeCodeSegment/2));
 	}
 	
 	public void loadBody(Scanner scanner) {
