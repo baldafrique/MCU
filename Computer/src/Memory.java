@@ -1,11 +1,8 @@
 
 public class Memory  {
 	private short memory[];
-			
-	public Memory() {
-	}
 	
-	public short load(short mar) {
+	public short load(short mar) { 
 		return memory[mar];
 	}
 	
@@ -13,7 +10,7 @@ public class Memory  {
 		memory[mar] = mbr;
 	}
 
-	public int allocateMemory(int size) {
+	public short allocateMemory(int size) {
 		this.memory = new short[size];
 		return 0;
 	}

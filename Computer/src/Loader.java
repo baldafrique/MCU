@@ -32,9 +32,8 @@ public class Loader {
 		this.sizeHeader = 4;
 		this.sizeCodeSegment = decodeLine(lineCodeSegmentSize);
 		this.sizeDataSegment = decodeLine(lineDataSegmentSize);
-		this.startAddress = (short) this.memory.allocateMemory(sizeHeader + sizeDataSegment + sizeCodeSegment);
+		this.startAddress = this.memory.allocateMemory(sizeHeader + sizeDataSegment + sizeCodeSegment);
 		this.currentAddress = startAddress;
-		
 		this.memory.store(currentAddress++, sizeDataSegment);
 		this.memory.store(currentAddress++, sizeCodeSegment);
 		this.cpu.setPC((short) (startAddress + sizeHeader / 2));

@@ -26,8 +26,12 @@ public class CPU {
 	
 	private class Register {
 		protected short value;
-		public short getValue() { return this.value; }
-		public void setValue(short value) { this.value = value; }
+		public short getValue() { 
+			return this.value; 
+		}
+		public void setValue(short value) {
+			this.value = value; 
+		}
 	}
 	
 	private class CU {
@@ -77,14 +81,14 @@ public class CPU {
 		}
 		
 		public void multiply(short value) {
-			
+			this.registers[ERegister.eAC.ordinal()].setValue((short) (this.value * value));
 		}
 		public void divide(short value) {
 			this.registers[ERegister.eAC.ordinal()].setValue((short) (this.value / value));
 		}
 		
 		public void and(short value) {
-			
+			this.registers[ERegister.eAC.ordinal()].setValue((short) (this.value & value));
 		}
 	}
 	
@@ -120,14 +124,18 @@ public class CPU {
 	// states
 	private boolean bPowerOn;
 	
-	private boolean isPowerOn() { return this.bPowerOn; }
+	private boolean isPowerOn() { 
+		return this.bPowerOn;
+	}
 	
 	public void setPowerOn() { 
 		this.bPowerOn = true; 
 		this.run();
 	}
 	
-	public void shutDown() { this.bPowerOn = false; }
+	public void shutDown() {
+		this.bPowerOn = false;
+	}
 	
 	public void setPC(short size) {
 		this.registers[ERegister.ePC.ordinal()].setValue(size);
@@ -206,7 +214,11 @@ public class CPU {
 	}
 	
 	private void MULC() {
-		
+		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
+		this.LDC();
+		decreasePC();
+		this.alu.multiply(this.registers[ERegister.eAC.ordinal()].getValue());
+		increasePC();
 	}
 	
 	private void DIVA() {
@@ -291,8 +303,12 @@ public class CPU {
 	}
 	
 	// associate
-	public void associate(Memory memory) { this.memory = memory; }
-	public void associate(Loader loader) { this.loader = loader; }
+	public void associate(Memory memory) { 
+		this.memory = memory; 
+	}
+	public void associate(Loader loader) { 
+		this.loader = loader;
+	}
 	
 	// methods
 	private void fetch() {
