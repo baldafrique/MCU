@@ -6,47 +6,52 @@ public class Loader {
 
 	private CPU cpu;
 	private Memory memory;
-	int startAddress;
-	int sizeHeader;
-	int sizeCodeSegment; 
-	int sizeDataSegment;
+	short startAddress;
+	short currentAddress;
+	short sizeHeader;
+	short sizeCodeSegment; 
+	short sizeDataSegment;
+	
+	public Loader(CPU cpu, Memory memory) {
+		this.memory = memory;
+		this.cpu = cpu;
+	}
 	
 	private short decodeLine(String line) {
 		short digit0, digit1, digit2, digit3;
-		digit0 = (short) (line.charAt(0) << 12);
-		digit1 = (short) (line.charAt(1) << 8);
-		digit2 = (short) (line.charAt(2) << 4);
-		digit3 = (short) line.charAt(3);
+		digit0 = (short) (Character.getNumericValue(line.charAt(0)) << 12);
+		digit1 = (short) (Character.getNumericValue(line.charAt(1)) << 8);
+		digit2 = (short) (Character.getNumericValue(line.charAt(2)) << 4);
+		digit3 = (short) Character.getNumericValue(line.charAt(3));
 		return (short) (digit0 + digit1 + digit2 + digit3);
 	}
 	
 	public void loadHeader(Scanner scanner) {
 		String lineDataSegmentSize = scanner.nextLine();
 		String lineCodeSegmentSize = scanner.nextLine();
-		this.sizeHeader = 
-		this.sizeCodeSegment =
-		this.sizeDataSegment = 
-		this.startAddress = this.memory.allocateMemory(sizeHeader +sizeDataSegment + sizeCodeSegment);
-		this.cpu.setPC(startAddress + sizeHeader);
-		this.cpu.setSP(startAddress + sizeHeader + sizeCodeSegment);
+		this.sizeHeader = 4;
+		this.sizeCodeSegment = decodeLine(lineCodeSegmentSize);
+		this.sizeDataSegment = decodeLine(lineDataSegmentSize);
+		this.startAddress = (short) this.memory.allocateMemory(sizeHeader + sizeDataSegment + sizeCodeSegment);
+		this.currentAddress = startAddress;
+		
+		this.memory.store(currentAddress++, sizeDataSegment);
+		this.memory.store(currentAddress++, sizeCodeSegment);
+		this.cpu.setPC((short) (startAddress + sizeHeader));
+		this.cpu.setSP((short) (startAddress + sizeHeader + sizeCodeSegment));
 	}
 	
 	public void loadBody(Scanner scanner) {
 		while (scanner.hasNext()) {
 			String line = scanner.nextLine();
-			memory.store((short) (startAddress + sizeHeader), decodeLine(line));
+			memory.store((short) (currentAddress++), decodeLine(line));
 		}
 	}
 	
-	public void load(String fileName) {
-		try {
-			Scanner scanner = new Scanner(new File("exe/" + fileName));
-			this.loadHeader(scanner);
-			this.loadBody(scanner);
-			scanner.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void load(String fileName) throws FileNotFoundException {
+		Scanner scanner = new Scanner(new File("exe/" + fileName));
+		this.loadHeader(scanner);
+		this.loadBody(scanner);
+		scanner.close();
 	}
 }

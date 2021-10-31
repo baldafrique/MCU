@@ -1,4 +1,5 @@
-	
+import java.io.FileNotFoundException;
+
 public class CPU {
 	
 	// declaration
@@ -81,8 +82,8 @@ public class CPU {
 	
 	private enum ERegister {
 		eIR,
-		eSP,
 		ePC,
+		eSP,
 		eAC,
 		eMBR,
 		eMAR,
@@ -106,6 +107,7 @@ public class CPU {
 	
 	// association
 	private Memory memory;
+	private Loader loader;
 	
 	// states
 	private boolean bPowerOn;
@@ -118,6 +120,14 @@ public class CPU {
 	}
 	
 	public void shutDown() { this.bPowerOn = false; }
+	
+	public void setPC(short size) {
+		this.registers[ERegister.ePC.ordinal()].setValue(size);
+	}
+	
+	public void setSP(short size) {
+		this.registers[ERegister.eSP.ordinal()].setValue(size);
+	}
 	
 	// instructions
 	private void Halt() {
@@ -226,16 +236,13 @@ public class CPU {
 	
 	// associate
 	public void associate(Memory memory) { this.memory = memory; }
+	public void associate(Loader loader) { this.loader = loader; }
 	
 	// methods
 	private void fetch() {
 		this.registers[ERegister.eMAR.ordinal()].setValue(this.registers[ERegister.ePC.ordinal()].getValue());
-		this.registers[ERegister.eMBR.ordinal()].setValue(this.registers[ERegister.eMAR.ordinal()].getValue());
+		this.registers[ERegister.eMBR.ordinal()].setValue(this.memory.load(this.registers[ERegister.eMAR.ordinal()].getValue()));
 		this.registers[ERegister.eIR.ordinal()].setValue(this.registers[ERegister.eMBR.ordinal()].getValue());
-	}
-	
-	private void decode() {
-		
 	}
 	
 	private void execute() {
@@ -303,11 +310,14 @@ public class CPU {
 		}
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		CPU cpu = new CPU();
 		Memory memory = new Memory();
+		Loader loader = new Loader(cpu, memory);
 		cpu.associate(memory);
-		memory.loadProcess("rank");
+		cpu.associate(loader);
+		loader.load("rank");
 		cpu.setPowerOn();
 	}
+
 }
