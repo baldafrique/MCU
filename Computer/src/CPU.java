@@ -1,5 +1,6 @@
-
+	
 public class CPU {
+	
 	// declaration
 	private enum EOpcode {
 		eHalt,
@@ -11,12 +12,14 @@ public class CPU {
 		eSUBA,
 		eSUBC,
 		eMULA,
+		eMULC,
 		eDIVA,
+		eDIVC,
 		eANDA,
 		eJMP,
 		eJMPBZ,
-		eJMPBZEQ, // (A<=B)
-		eJMPEQ
+		eJMPEQ,
+		eJMPBZEQ
 	}
 	
 	private class Register {
@@ -88,7 +91,7 @@ public class CPU {
 	
 	private class IR extends Register {
 		public short getOperator() {
-			return (short) (this.value & 0);
+			return (short) (this.value & 0xff00);
 		}
 		
 		public short getOperand() {
@@ -115,11 +118,6 @@ public class CPU {
 	}
 	
 	public void shutDown() { this.bPowerOn = false; }
-	
-	public void setPointers() {
-		this.registers[ERegister.ePC.ordinal()].setValue(this.memory.getPC());
-		this.registers[ERegister.eSP.ordinal()].setValue(this.memory.getSP());
-	}
 	
 	// instructions
 	private void Halt() {
@@ -173,10 +171,18 @@ public class CPU {
 		this.alu.multiply(this.registers[ERegister.eAC.ordinal()].getValue());
 	}
 	
+	private void MULC() {
+		
+	}
+	
 	private void DIVA() {
 		this.alu.store(this.registers[ERegister.eAC.ordinal()].getValue());
 		this.LDA();
 		this.alu.divide(this.registers[ERegister.eAC.ordinal()].getValue());
+	}
+	
+	private void DIVC() {
+		
 	}
 	
 	private void ANDA() {
@@ -261,8 +267,14 @@ public class CPU {
 			case eMULA:
 				this.MULA();
 				break;
+			case eMULC:
+				this.MULC();
+				break;
 			case eDIVA:
 				this.DIVA();
+				break;
+			case eDIVC:
+				this.DIVC();
 				break;
 			case eANDA:
 				this.ANDA();
@@ -273,11 +285,11 @@ public class CPU {
 			case eJMPBZ:
 				this.JMPBZ();
 				break;
-			case eJMPBZEQ:
-				this.JMPBZEQ();
-				break;
 			case eJMPEQ:
 				this.JMPEQ();
+				break;
+			case eJMPBZEQ:
+				this.JMPBZEQ();
 				break;
 			default:
 				break;
@@ -285,7 +297,6 @@ public class CPU {
 	}
 
 	public void run() {
-		this.setPointers();
 		while(isPowerOn()) {
 			this.fetch();
 			this.execute();
@@ -296,7 +307,7 @@ public class CPU {
 		CPU cpu = new CPU();
 		Memory memory = new Memory();
 		cpu.associate(memory);
-		memory.loadProcess("sum");
+		memory.loadProcess("rank");
 		cpu.setPowerOn();
 	}
 }
